@@ -1,6 +1,6 @@
 {
   "description": "《高性价比人生》人生闯关小游戏",
-  "appid": "wx7100527ef9bbd27d",
+  "appid": "wx329ae7f87a77d710",
   "projectname": "howtolivebetter-life",
   "compileType": "game",
   "libVersion": "3.5.5",
@@ -8,15 +8,55 @@
     "es6": true,
     "minified": true,
     "urlCheck": false,
-    "postcss": false
+    "postcss": false,
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "enhance": false,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": false,
+    "condition": false,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
   },
   "packOptions": {
     "ignore": [
-      { "type": "file", "value": "index.html" },
-      { "type": "file", "value": "preview.html" },
-      { "type": "file", "value": "style.css" },
-      { "type": "file", "value": "web.js" },
-      { "type": "file", "value": "check.mjs" }
-    ]
-  }
+      {
+        "value": "index.html",
+        "type": "file"
+      },
+      {
+        "value": "preview.html",
+        "type": "file"
+      },
+      {
+        "value": "style.css",
+        "type": "file"
+      },
+      {
+        "value": "web.js",
+        "type": "file"
+      },
+      {
+        "value": "check.mjs",
+        "type": "file"
+      },
+      {
+        "value": "engine.test.mjs",
+        "type": "file"
+      }
+    ],
+    "include": []
+  },
+  "simulatorPluginLibVersion": {},
+  "isGameTourist": false,
+  "editorSetting": {}
 }
