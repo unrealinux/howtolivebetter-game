@@ -1,0 +1,22 @@
+{
+  "description": "《高性价比人生》人生闯关小游戏",
+  "appid": "wx7100527ef9bbd27d",
+  "projectname": "howtolivebetter-life",
+  "compileType": "game",
+  "libVersion": "3.5.5",
+  "setting": {
+    "es6": true,
+    "minified": true,
+    "urlCheck": false,
+    "postcss": false
+  },
+  "packOptions": {
+    "ignore": [
+      { "type": "file", "value": "index.html" },
+      { "type": "file", "value": "preview.html" },
+      { "type": "file", "value": "style.css" },
+      { "type": "file", "value": "web.js" },
+      { "type": "file", "value": "check.mjs" }
+    ]
+  }
+}

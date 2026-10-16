@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>高性价比人生 · 人生闯关</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main id="app">
+
+  <section id="screen-start" class="screen">
+    <h1>高性价比人生</h1>
+    <p class="sub">用最少的钱、时间和精力，换回最多的寿命、金钱和人身自由</p>
+    <p class="lead">
+      从 22 岁到 62 岁，十个路口。每个路口三个选项，选完告诉你书里怎么说、出自第几节第几条。
+      书里没有满分答案，这局也没有。
+    </p>
+
+    <div class="stats-intro">
+      <div><b>❤️ 命</b><span>归零 = 早死结局</span></div>
+      <div><b>💰 钱</b><span>跌到 -20 = 破产结局</span></div>
+      <div><b>🧭 自由</b><span>归零 = 被告席结局</span></div>
+    </div>
+
+    <h2 class="cast-title">出场的人</h2>
+    <ul class="cast">
+      <li><b>张姐</b><span>房东。「都这样的。」</span></li>
+      <li><b>老周</b><span>主管。「撑到工位再打卡。」</span></li>
+      <li><b>二虎</b><span>发小。「保本，稳赚。」</span></li>
+      <li><b>老陈</b><span>邻居，抽了三十年烟。「忍忍就好。」</span></li>
+      <li><b>老孙</b><span>楼上。「我那偏方三个月根治。」</span></li>
+      <li><b>李医生</b><span>同学群里的急诊科大夫。</span></li>
+    </ul>
+
+    <button id="btn-start" class="primary">开始这一生（约 10 分钟）</button>
+  </section>
+
+  <section id="screen-play" class="screen hidden">
+    <header id="hud">
+      <div class="stat"><b>❤️ 命</b><span id="v-life"></span></div>
+      <div class="stat"><b>💰 钱</b><span id="v-money"></span></div>
+      <div class="stat"><b>🧭 自由</b><span id="v-freedom"></span></div>
+      <div class="stat"><b>进度</b><span id="v-progress"></span></div>
+    </header>
+
+    <article class="card">
+      <div class="age" id="s-age"></div>
+      <h2 id="s-title"></h2>
+      <p id="s-scene" class="scene"></p>
+    </article>
+
+    <div class="npc">
+      <b id="s-npc-name"></b>
+      <p id="s-npc-line"></p>
+    </div>
+
+    <div id="options" class="options"></div>
+
+    <article id="result" class="card result hidden">
+      <div id="s-delta" class="delta"></div>
+      <p id="s-outcome" class="outcome"></p>
+      <div class="book">
+        <b>书里怎么说</b>
+        <p id="s-cite" class="cite"></p>
+        <a id="s-link" target="_blank" rel="noopener">翻原文 →</a>
+      </div>
+      <button id="btn-next" class="primary">下一关</button>
+    </article>
+  </section>
+
+  <section id="screen-end" class="screen hidden">
+    <h1 id="e-rank"></h1>
+    <p id="e-desc" class="lead"></p>
+    <div id="e-stats" class="stats-intro"></div>
+    <h2 class="cast-title">这一局你漏掉的条目</h2>
+    <ul id="e-missed" class="missed"></ul>
+    <button id="btn-restart" class="primary">再来一次</button>
+  </section>
+
+</main>
+<script src="levels.js"></script>
+<script src="engine.js"></script>
+<script src="web.js"></script>
+</body>
+</html>
