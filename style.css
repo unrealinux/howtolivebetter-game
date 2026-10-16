@@ -86,5 +86,6 @@ button.primary:hover { filter: brightness(1.1); }
 
 .missed { list-style: none; padding: 0; margin: 0 0 10px; }
 .missed li { border-bottom: 1px solid var(--line); padding: 10px 0; font-size: 14px; }
+.missed li.ok a { color: var(--good); }
 .missed a { color: var(--accent); text-decoration: none; }
 .missed span { color: var(--dim); display: block; font-size: 13px; }

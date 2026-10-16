@@ -14,6 +14,8 @@
 | 微信小游戏 | 微信开发者工具导入本仓库根目录，项目类型选**小游戏** |
 | Canvas 预览 | 打开 `preview.html`，不用装开发者工具就能看小游戏长什么样 |
 
+玩到一半关掉，下次打开会接着上次那一关。网页版和 Canvas 预览都能用键盘：`1` `2` `3` 选选项，回车点底部按钮（小游戏没有键盘，只有触屏）。
+
 ## 10 个路口
 
 | 岁 | 关卡 | 出处 |
@@ -41,16 +43,26 @@ node check.mjs
 
 它查字段、选项数，核对每关正好一个正确选项，并算一遍最好和最坏两条路能不能走完；顺带校验两个 JSON 配置合法（JSON 写坏时，微信开发者工具只会报「game.json not found」，很难查）。
 
+`engine.js` 的判断逻辑另有测试，改完也跑一下：
+
+```
+node --test
+```
+
 ## 文件
 
 | 文件 | 作用 |
 | --- | --- |
 | `levels.js` | **唯一数据源**：10 关、场景、台词、数值、出处 |
-| `engine.js` | 纯逻辑：加减分、判定坏结局、算段位。不碰 DOM 也不碰 Canvas |
+| `engine.js` | 纯逻辑：加减分、判定坏结局、算段位、验证存档、拼分享文案。不碰 DOM 也不碰 Canvas |
+| `engine.test.mjs` | 上面这些逻辑的测试（`node --test`） |
+| `platform.js` | 平台适配：画布、输入（触屏 + 键盘）、读存档、分享、开外链 |
 | `index.html` `web.js` `style.css` | 网页版（DOM 渲染） |
-| `preview.html` `main.js` `ui.js` `platform.js` | Canvas 渲染层，也是小游戏的界面 |
+| `preview.html` `main.js` `ui.js` | Canvas 渲染层，也是小游戏的界面 |
 | `game.js` `game.json` `project.config.json` | 微信小游戏入口和配置 |
 | `check.mjs` | 数据与配置自检 |
+
+存档写在 `localStorage`（小游戏里是 `wx.setStorageSync`）的 `htlb.save` 一个键上，读回来会当成不可信输入校验一遍；走完一局即清掉。
 
 小游戏里**没有 DOM 和 CSS**，所有文字、卡片、按钮都在 `ui.js` 里用 Canvas 手画。触屏事件、打开外链的方式收在 `platform.js`——小游戏打不开外链，所以「翻原文」在小游戏里是复制链接，网页里才是新窗口。
 

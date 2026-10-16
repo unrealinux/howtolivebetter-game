@@ -2,11 +2,28 @@
 (function () {
   const E = globalThis.Engine;
   const LEVELS = globalThis.LEVELS;
+  const P = globalThis.Platform;
 
   let state = E.createState();
   let chosen = null;
+  let endFlags = {};
 
   const $ = (id) => document.getElementById(id);
+
+  // 结局页一行：正文 + 出处，都链回原书
+  function endRow(title, cite, file) {
+    const li = document.createElement("li");
+    const a = document.createElement("a");
+    a.href = E.bookURL(file);
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.textContent = title;
+    const span = document.createElement("span");
+    span.textContent = cite;
+    li.appendChild(a);
+    li.appendChild(span);
+    return li;
+  }
 
   function show(id) {
     for (const s of document.querySelectorAll(".screen")) s.classList.add("hidden");
@@ -20,6 +37,9 @@
     $("v-freedom").textContent = state.freedom;
     $("v-progress").textContent = Math.min(state.idx + 1, LEVELS.length) + "/" + LEVELS.length;
   }
+
+  const chosenIndex = () => (chosen ? LEVELS[state.idx].options.indexOf(chosen) : null);
+  const save = () => P.save(E.saveString(state, chosenIndex()));
 
   function renderLevel() {
     const lv = LEVELS[state.idx];
@@ -41,14 +61,11 @@
       b.addEventListener("click", () => choose(op));
       box.appendChild(b);
     });
+    save();
   }
 
-  function choose(op) {
+  function renderResult(op) {
     const lv = LEVELS[state.idx];
-    chosen = op;
-    state = E.applyChoice(state, lv, op);
-    renderHud();
-
     $("options").classList.add("hidden");
     $("result").classList.remove("hidden");
 
@@ -59,7 +76,15 @@
     $("s-outcome").textContent = op.result;
     $("s-cite").textContent = op.cite;
     $("s-link").href = E.bookURL(lv.file);
-    $("btn-next").textContent = state.idx === LEVELS.length - 1 ? "走完这一生" : "下一关";
+    $("btn-next").textContent = E.badFlag(state) ? "看看结局" : state.idx === LEVELS.length - 1 ? "走完这一生" : "下一关";
+  }
+
+  function choose(op) {
+    state = E.applyChoice(state, LEVELS[state.idx], op);
+    chosen = op;
+    renderHud();
+    save();
+    renderResult(op);
   }
 
   function next() {
@@ -70,6 +95,8 @@
   }
 
   function end(flags) {
+    P.clear();
+    endFlags = flags;
     show("screen-end");
     const { rank, desc } = E.endingFor(state, flags);
     $("e-rank").textContent = rank;
@@ -85,15 +112,23 @@
       .join("");
 
     const ul = $("e-missed");
-    ul.innerHTML = "";
+    ul.textContent = "";
     if (!state.missed.length) {
-      ul.innerHTML = "<li>没有。这一局你一条都没漏。<span>去书里挑一条你还没做到的，这个月做掉。</span></li>";
-    }
-    for (const m of state.missed) {
       const li = document.createElement("li");
-      li.innerHTML =
-        "<a href='" + E.bookURL(m.file) + "' target='_blank' rel='noopener'>" + m.title + "</a><span>" + m.cite + "</span>";
+      li.textContent = "没有。这一局你一条都没漏。";
+      const span = document.createElement("span");
+      span.textContent = "去书里挑一条你还没做到的，这个月做掉。";
+      li.appendChild(span);
       ul.appendChild(li);
+    }
+    for (const m of state.missed) ul.appendChild(endRow(m.title, m.cite, m.file));
+
+    const ulp = $("e-picks");
+    ulp.textContent = "";
+    for (const p of state.picks) {
+      const li = endRow((p.ok ? "✓ " : "✗ ") + p.age + " 岁 · " + p.title, p.cite, p.file);
+      if (p.ok) li.className = "ok";
+      ulp.appendChild(li);
     }
   }
 
@@ -102,6 +137,12 @@
     renderLevel();
   });
   $("btn-next").addEventListener("click", next);
+  $("btn-share").addEventListener("click", () => {
+    const btn = $("btn-share");
+    P.share(E.shareText(state, endFlags)).then((ok) => {
+      if (ok) btn.textContent = "已复制 ✓";
+    });
+  });
   $("btn-restart").addEventListener("click", () => {
     state = E.createState();
     show("screen-play");
@@ -110,4 +151,17 @@
 
   // 调试用：无头浏览器里跑一遍全对路径
   globalThis.__webDebug = () => ({ state, chosen, LEVELS });
+
+  // 有存档就直接回到那一关，没有就停在开始页
+  const saved = E.parseSave(P.load());
+  if (saved) {
+    state = saved.state;
+    show("screen-play");
+    renderLevel();
+    if (saved.chosenIndex != null) {
+      chosen = LEVELS[state.idx].options[saved.chosenIndex];
+      save();
+      renderResult(chosen);
+    }
+  }
 })();

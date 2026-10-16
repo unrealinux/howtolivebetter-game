@@ -233,12 +233,29 @@
         txt(m.cite, F.small, C.dim, LHS);
         gap(8);
       }
+      gap(10);
+      txt("你走过的路", F.small, C.dim, LHS); gap(6);
+      for (const p of view.state.picks) {
+        txt((p.ok ? "✓ " : "✗ ") + p.age + " 岁 · " + p.title, F.sub, p.ok ? C.good : C.dim, LHS, {
+          type: "copy",
+          url: G.Engine.bookURL(p.file),
+        });
+        txt(p.cite, F.small, C.dim, LHS);
+        gap(6);
+      }
+      gap(14);
+      txt("分享这一局 → 点这里", F.sub, C.accent, LHS, {
+        type: "share",
+        text: G.Engine.shareText(view.state, view.flags),
+      });
       gap(16);
       txt("原书《高性价比人生指南》，CC BY 4.0 · 代码 MIT", F.small, C.dim, LHS);
       txt("github.com/eternity4719/HowToLiveBetter ← 点这里复制", F.small, C.dim, LHS, { type: "copy", url: G.Engine.REPO_URL });
     }
 
-    return { items, height: y + 20 };
+    // 底部按钮：开始/结局页随时可点，闯关页要先选完选项
+    const dockOn = view.screen !== "play" || !!view.chosen;
+    return { items, height: y + 20, dockOn };
   }
 
   function render(ctx, view, geom, layout, scroll) {
@@ -298,8 +315,9 @@
     const by = h - geom.safeBottom - 56;
     const bh = 46;
     rr(ctx, PAD, by, w - PAD * 2, bh, RAD);
-    ctx.fillStyle = C.accent; ctx.fill();
-    ctx.font = F.btn; ctx.fillStyle = C.ink;
+    ctx.fillStyle = layout.dockOn ? C.accent : C.card; ctx.fill();
+    if (!layout.dockOn) { ctx.strokeStyle = C.line; ctx.lineWidth = 1; ctx.stroke(); }
+    ctx.font = F.btn; ctx.fillStyle = layout.dockOn ? C.ink : C.dim;
     ctx.textAlign = "center";
     ctx.fillText(view.dock, w / 2, by + 13);
     ctx.textAlign = "left";
@@ -308,7 +326,7 @@
 
   function hit(layout, scroll, x, y, geom) {
     const by = geom.h - geom.safeBottom - 56;
-    if (y >= by && y <= by + 46) return { type: "action" };
+    if (layout.dockOn && y >= by && y <= by + 46) return { type: "action" };
     const cy = y - geom.top + scroll;
     if (y < geom.top || y > geom.h - geom.bottom) return null;
     for (const it of layout.items) {

@@ -37,6 +37,9 @@
     UI.render(ctx, view, geom, layout, view.scroll);
   }
 
+  const chosenIndex = () => (view.chosen ? LEVELS[view.state.idx].options.indexOf(view.chosen) : null);
+  const save = () => P.save(E.saveString(view.state, chosenIndex()));
+
   function gotoStart() {
     view.screen = "start";
     view.state = E.createState();
@@ -44,6 +47,7 @@
     view.flags = {};
     view.dock = "开始这一生";
     view.scroll = 0;
+    P.clear();
     draw();
   }
 
@@ -51,7 +55,8 @@
     view.screen = "play";
     view.chosen = null;
     view.scroll = 0;
-    view.dock = view.state.idx === LEVELS.length - 1 ? "走完这一生" : "下一关";
+    view.dock = E.badFlag(view.state) ? "看看结局" : view.state.idx === LEVELS.length - 1 ? "走完这一生" : "下一关";
+    save();
     draw();
   }
 
@@ -60,14 +65,17 @@
     view.flags = flags;
     view.dock = "再来一次";
     view.scroll = 0;
+    P.clear();
     draw();
   }
 
   function pickOption(i) {
     if (view.chosen) return;
     const lv = LEVELS[view.state.idx];
+    if (!lv.options[i]) return;
     view.chosen = lv.options[i];
     view.state = E.applyChoice(view.state, lv, view.chosen);
+    save();
     draw();
   }
 
@@ -106,9 +114,28 @@
       if (act.type === "action") onAction();
       else if (act.type === "option") pickOption(act.index);
       else if (act.type === "copy") P.openURL(act.url);
+      else if (act.type === "share") P.share(act.text);
+    },
+    // 键盘走这里，和点击共用同一套动作
+    key(type, index) {
+      if (type !== "pick") return onAction();
+      if (view.screen === "play") pickOption(index);
     },
   });
 
   G.__view = () => ({ view, layout, geom });
-  gotoStart();
+
+  // 有存档就直接回到那一关，没有就从头开始
+  const saved = E.parseSave(P.load());
+  if (saved) {
+    view.state = saved.state;
+    gotoLevel();
+    if (saved.chosenIndex != null) {
+      view.chosen = LEVELS[view.state.idx].options[saved.chosenIndex];
+      save();
+      draw();
+    }
+  } else {
+    gotoStart();
+  }
 })();
