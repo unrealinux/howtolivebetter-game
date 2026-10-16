@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>原型 · 场景与人物动效 · 高性价比人生</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #14140f; overflow: hidden; }
+  canvas { display: block; touch-action: none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<!-- 一次性原型，不参与发布：两个正式入口（index.html / 微信小游戏）都不引用这个文件。
+     直接双击打开就能跑，不需要起服务器。 -->
+<script src="levels.js"></script>
+<script src="engine.js"></script>
+<script src="prototype-scene.js"></script>
+</body>
+</html>

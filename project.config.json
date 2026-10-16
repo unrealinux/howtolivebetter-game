@@ -52,6 +52,14 @@
       {
         "value": "engine.test.mjs",
         "type": "file"
+      },
+      {
+        "value": "prototype-scene.html",
+        "type": "file"
+      },
+      {
+        "value": "prototype-scene.js",
+        "type": "file"
       }
     ],
     "include": []
