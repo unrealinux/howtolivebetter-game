@@ -1,6 +1,10 @@
 // 关卡数据自检：node check.mjs
 // 改完 levels.js 跑一次。查字段、选项数，并算一遍最好和最坏两条路能不能走完。
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const { PROPS, WHERE, LIGHT } = require("./scene.js");
 
 const here = new URL(".", import.meta.url);
 const src = readFileSync(new URL("levels.js", here), "utf8");
@@ -14,6 +18,17 @@ LEVELS.forEach((lv, i) => {
   for (const k of need) if (!lv[k]) problems.push(`第 ${i + 1} 关缺字段 ${k}`);
   if (lv.options.length !== 3) problems.push(`${lv.age} 岁：选项数 ${lv.options.length}，应为 3`);
   if (lv.options.filter((o) => o.ok).length !== 1) problems.push(`${lv.age} 岁：正确选项不是 1 个`);
+
+  // 分镜条画什么（scene.js）。字段写错只会画出一条空带子，不会报错，所以在这查。
+  const st = lv.stage;
+  if (!st) problems.push(`${lv.age} 岁：缺 stage（分镜条画什么）`);
+  else {
+    if (!WHERE[st.where]) problems.push(`${lv.age} 岁：stage.where「${st.where}」没有这个地点`);
+    if (!LIGHT[st.light]) problems.push(`${lv.age} 岁：stage.light「${st.light}」没有这种光`);
+    if (st.tint && !/^#[0-9a-f]{6}$/i.test(st.tint)) problems.push(`${lv.age} 岁：stage.tint「${st.tint}」不是 #rrggbb`);
+    if (!st.props || !st.props.length) problems.push(`${lv.age} 岁：stage.props 是空的`);
+    for (const p of st.props || []) if (!PROPS[p]) problems.push(`${lv.age} 岁：stage.props 里的「${p}」没有这个道具`);
+  }
   lv.options.forEach((o, j) => {
     for (const k of ["life", "money", "freedom"]) {
       if (typeof o.effects?.[k] !== "number") problems.push(`${lv.age} 岁第 ${j + 1} 项缺 effects.${k}`);

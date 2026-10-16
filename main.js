@@ -19,9 +19,23 @@
   const view = { screen: "start", state: E.createState(), chosen: null, flags: {}, dock: "开始这一生", scroll: 0 };
   let layout = null;
 
+  const clock = () => (typeof performance !== "undefined" && performance.now ? performance.now() : Date.now());
+  const MIN_BAND = 96, MAX_BAND = 206;
+
   function bands() {
-    geom.top = (view.screen === "play" ? 62 : 12) + geom.safeTop;
+    // 闯关页顶上留一条分镜带，HUD 压在它上面
+    geom.band = view.screen === "play" ? MAX_BAND : 0;
+    geom.top = (view.screen === "play" ? geom.band : 12) + geom.safeTop;
     geom.bottom = 64 + geom.safeBottom;
+  }
+
+  // 分镜条只吃剩下的空间：先按最大留，量完内容再把它压到刚好放得下。
+  // 小屏手机上正文厚，带子就矮；大屏上给足。
+  function fitBand() {
+    if (view.screen !== "play") return;
+    const room = geom.h - geom.safeTop - geom.bottom;
+    geom.band = Math.max(MIN_BAND, Math.min(MAX_BAND, room - layout.height));
+    geom.top = geom.band + geom.safeTop;
   }
 
   const maxScroll = () => Math.max(0, layout.height - (geom.h - geom.top - geom.bottom));
@@ -33,8 +47,28 @@
   function draw() {
     bands();
     layout = UI.build(ctx, view, geom);
+    fitBand();
     clampScroll();
-    UI.render(ctx, view, geom, layout, view.scroll);
+    UI.render(ctx, view, geom, layout, view.scroll, clock());
+    schedule();
+  }
+
+  // 分镜条要动，所以只在闯关页挂帧循环。循环里只重画分镜条和 HUD，
+  // 下面的卡片没变，不重画——不把整页排版每帧算一遍。
+  let raf = 0;
+  function schedule() {
+    if (view.screen === "play") {
+      if (!raf) raf = requestAnimationFrame(loop);
+    } else if (raf) {
+      cancelAnimationFrame(raf);
+      raf = 0;
+    }
+  }
+
+  function loop(t) {
+    raf = 0;
+    UI.frame(ctx, view, geom, t);
+    schedule();
   }
 
   const chosenIndex = () => (view.chosen ? LEVELS[view.state.idx].options.indexOf(view.chosen) : null);
@@ -102,7 +136,7 @@
       if (!down.moved) return;
       view.scroll = down.scroll - dy;
       clampScroll();
-      UI.render(ctx, view, geom, layout, view.scroll);
+      UI.render(ctx, view, geom, layout, view.scroll, clock());
     },
     end(x, y) {
       if (!down) return;

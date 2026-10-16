@@ -3,6 +3,8 @@
   const E = globalThis.Engine;
   const LEVELS = globalThis.LEVELS;
   const P = globalThis.Platform;
+  const Scene = globalThis.Scene;
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   let state = E.createState();
   let chosen = null;
@@ -29,7 +31,58 @@
     for (const s of document.querySelectorAll(".screen")) s.classList.add("hidden");
     $(id).classList.remove("hidden");
     window.scrollTo(0, 0);
+    if (id === "screen-play") startBand();
+    else stopBand();
   }
+
+  // 分镜条：只有这一小块要动，所以只开一个画它的帧循环，DOM 一个字都不重画
+  const band = $("band");
+  const bctx = band.getContext("2d");
+  let bandRaf = 0;
+
+  function drawBand(t) {
+    const lv = LEVELS[state.idx];
+    const w = band.clientWidth, h = band.clientHeight;
+    if (!w || !h) return;
+    bctx.clearRect(0, 0, band.width, band.height);
+    bctx.textBaseline = "top";
+    bctx.textAlign = "left";
+    Scene.draw(bctx, { x: 0, y: 0, w, h }, t, lv.stage, lv.npc.name, !chosen && t % 7000 < 1800);
+  }
+
+  function sizeBand() {
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    band.width = band.clientWidth * dpr;
+    band.height = band.clientHeight * dpr;
+    bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function loopBand(t) {
+    bandRaf = 0;
+    drawBand(t);
+    if (!$("screen-play").classList.contains("hidden")) bandRaf = requestAnimationFrame(loopBand);
+  }
+
+  function startBand() {
+    if (!Scene) return;
+    sizeBand();
+    // 关了动效就只画一帧，别一直烧电
+    if (reduceMotion) return drawBand(0);
+    if (!bandRaf) bandRaf = requestAnimationFrame(loopBand);
+  }
+
+  function stopBand() {
+    if (bandRaf) {
+      cancelAnimationFrame(bandRaf);
+      bandRaf = 0;
+    }
+  }
+
+  addEventListener("resize", () => {
+    if ($("screen-play").classList.contains("hidden")) return;
+    sizeBand();
+    if (reduceMotion) drawBand(0);
+  });
 
   function renderHud() {
     $("v-life").textContent = state.life;

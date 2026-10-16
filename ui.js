@@ -258,7 +258,49 @@
     return { items, height: y + 20, dockOn };
   }
 
-  function render(ctx, view, geom, layout, scroll) {
+  // 分镜条：固定在顶部，不跟着滚，HUD 压在它上面
+  function drawBand(ctx, view, geom, t) {
+    if (view.screen !== "play" || !geom.band || !G.Scene) return;
+    const lv = G.LEVELS[view.state.idx];
+    // 没选的时候每隔几秒「说一句」，选了就静下来
+    const talking = !view.chosen && t % 7000 < 1800;
+    G.Scene.draw(ctx, { x: 0, y: 0, w: geom.w, h: geom.band + geom.safeTop }, t, lv.stage, lv.npc.name, talking);
+  }
+
+  function drawHud(ctx, view, geom) {
+    if (view.screen !== "play") return;
+    const s = view.state;
+    const w = geom.w;
+    const cells = [
+      ["❤️ 命", s.life],
+      ["💰 钱", s.money],
+      ["🧭 自由", s.freedom],
+      ["进度", Math.min(s.idx + 1, G.LEVELS.length) + "/" + G.LEVELS.length],
+    ];
+    const gapX = 6, cw = (w - PAD * 2 - gapX * 3) / 4, cy = geom.safeTop + 6, ch = 48;
+    cells.forEach(([k, v], i) => {
+      const cx = PAD + i * (cw + gapX);
+      rr(ctx, cx, cy, cw, ch, 8);
+      ctx.fillStyle = C.card; ctx.fill();
+      ctx.strokeStyle = C.line; ctx.lineWidth = 1; ctx.stroke();
+      ctx.textAlign = "center";
+      ctx.font = F.statL; ctx.fillStyle = C.dim;
+      ctx.fillText(k, cx + cw / 2, cy + 7);
+      ctx.font = F.statV; ctx.fillStyle = C.fg;
+      ctx.fillText(String(v), cx + cw / 2, cy + 23);
+      ctx.textAlign = "left";
+    });
+  }
+
+  // 帧循环只重画这两样；下面的卡片没变，不用跟着重画一遍
+  function frame(ctx, view, geom, t) {
+    ctx.textBaseline = "top";
+    ctx.textAlign = "left";
+    drawBand(ctx, view, geom, t);
+    drawHud(ctx, view, geom);
+  }
+
+  function render(ctx, view, geom, layout, scroll, t) {
     const { w, h } = geom;
     ctx.fillStyle = C.bg;
     ctx.fillRect(0, 0, w, h);
@@ -268,29 +310,8 @@
     const top = geom.top;
     const viewH = h - geom.top - geom.bottom;
 
-    // HUD 固定在上方，不跟着滚
-    if (view.screen === "play") {
-      const s = view.state;
-      const cells = [
-        ["❤️ 命", s.life],
-        ["💰 钱", s.money],
-        ["🧭 自由", s.freedom],
-        ["进度", Math.min(s.idx + 1, G.LEVELS.length) + "/" + G.LEVELS.length],
-      ];
-      const gapX = 6, cw = (w - PAD * 2 - gapX * 3) / 4, cy = geom.safeTop + 6, ch = 48;
-      cells.forEach(([k, v], i) => {
-        const cx = PAD + i * (cw + gapX);
-        rr(ctx, cx, cy, cw, ch, 8);
-        ctx.fillStyle = C.card; ctx.fill();
-        ctx.strokeStyle = C.line; ctx.lineWidth = 1; ctx.stroke();
-        ctx.textAlign = "center";
-        ctx.font = F.statL; ctx.fillStyle = C.dim;
-        ctx.fillText(k, cx + cw / 2, cy + 7);
-        ctx.font = F.statV; ctx.fillStyle = C.fg;
-        ctx.fillText(String(v), cx + cw / 2, cy + 23);
-        ctx.textAlign = "left";
-      });
-    }
+    drawBand(ctx, view, geom, t);
+    drawHud(ctx, view, geom);
 
     // 内容区
     ctx.save();
@@ -336,7 +357,7 @@
     return null;
   }
 
-  const UI = { build, render, hit };
+  const UI = { build, render, hit, frame };
   G.UI = UI;
   if (typeof module === "object" && module.exports) module.exports = UI;
 })();
