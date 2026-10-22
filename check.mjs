@@ -1,10 +1,12 @@
 // 关卡数据自检：node check.mjs
-// 改完 levels.js 跑一次。查字段、选项数，并算一遍最好和最坏两条路能不能走完。
+// 改完 levels.js 跑一次。查字段、选项数，算一遍最好和最坏两条路能不能走完，
+// 再打出调参用的数值轨迹，和「错一步救不回来」的口子都落在哪几关。
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 const { PROPS, WHERE, LIGHT } = require("./scene.js");
+const Engine = require("./engine.js");
 
 const here = new URL(".", import.meta.url);
 const src = readFileSync(new URL("levels.js", here), "utf8");
@@ -54,6 +56,31 @@ if (problems.length) {
   process.exit(1);
 }
 
+// 数值和坏结局的阈值都出自 engine.js，这里直接调它，免得抄一份常量出来 drift。
+const END_NAME = { dead: "早死", broke: "破产", jailed: "被告席" };
+const clip = (t) => (t.length > 20 ? t.slice(0, 20) + "…" : t);
+const okOf = (lv) => lv.options.find((o) => o.ok);
+
+// —— 单错容错：其它关全对、只在这一关选错这一项，看能不能走完。——
+// 错一次就出局如果是故意设计的，这就是那张名单；无意走出来的也会在这暴露。
+const fatal = [];
+for (let i = 0; i < LEVELS.length; i++) {
+  for (const op of LEVELS[i].options) {
+    if (op.ok) continue;
+    let s = Engine.createState();
+    for (let k = 0; k < LEVELS.length; k++) {
+      s = Engine.applyChoice(s, LEVELS[k], k === i ? op : okOf(LEVELS[k]));
+      const r = Engine.advance(s);
+      if (r.done && r.flags) {
+        const key = r.flags.dead ? "dead" : r.flags.jailed ? "jailed" : "broke";
+        fatal.push(`${LEVELS[i].age} 岁「${LEVELS[i].title}」选「${clip(op.text)}」→ ${END_NAME[key]}`);
+        break;
+      }
+      if (r.done) break;
+    }
+  }
+}
+
 // 配置文件必须是合法 JSON——微信开发者工具因为这个报错，只会说「game.json not found」
 for (const f of ["game.json", "project.config.json"]) {
   try {
@@ -66,3 +93,19 @@ for (const f of ["game.json", "project.config.json"]) {
 console.log(`关卡 ${LEVELS.length} 关，数据完整。`);
 console.log(`全选对：${JSON.stringify(best)} 总分 ${best.life + best.money + best.freedom}`);
 console.log(`全选错：${JSON.stringify(worst)}（会中途触发坏结局，属正常）`);
+
+// —— 数值轨迹：每关选对之后三值落在哪。调 levels.js 的数值时看这条线陡不陡。——
+let track = Engine.createState();
+console.log("");
+for (const lv of LEVELS) {
+  track = Engine.applyChoice(track, lv, okOf(lv));
+  console.log(`选对轨迹 ${lv.age} 岁「${lv.title}」：❤ ${track.life} 💰 ${track.money} 🧭 ${track.freedom}`);
+}
+
+console.log("");
+if (fatal.length) {
+  console.log("错一步救不回来的口子（其余全对也会出局）：");
+  for (const f of fatal) console.log("  - " + f);
+} else {
+  console.log("错一步都救得回来：随便在哪关错一次，后面全对仍能走完。");
+}
