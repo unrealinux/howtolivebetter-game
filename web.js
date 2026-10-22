@@ -114,6 +114,8 @@
       b.addEventListener("click", () => choose(op));
       box.appendChild(b);
     });
+    // 键盘走完一关回来，焦点接在第一个选项上；preventScroll 免得页面突然跳
+    box.firstElementChild.focus({ preventScroll: true });
     save();
   }
 
@@ -130,6 +132,8 @@
     $("s-cite").textContent = op.cite;
     $("s-link").href = E.bookURL(lv.file);
     $("btn-next").textContent = E.badFlag(state) ? "看看结局" : state.idx === LEVELS.length - 1 ? "走完这一生" : "下一关";
+    // 焦点落在「下一关」：读屏从这里接着读，回车/空格原生就能点
+    $("btn-next").focus({ preventScroll: true });
   }
 
   function choose(op) {
@@ -200,6 +204,17 @@
     state = E.createState();
     show("screen-play");
     renderLevel();
+  });
+
+  // 键盘：1/2/3 选选项。回车/空格不另绑——选完焦点已经挪到「下一关」，原生按键就能点。
+  // 焦点在别的按钮/链接上时数字键照常生效，回车交给它自己所在的元素。
+  document.addEventListener("keydown", (e) => {
+    if ($("screen-play").classList.contains("hidden")) return;
+    if (!(e.key >= "1" && e.key <= "3")) return;
+    const box = $("options");
+    if (box.classList.contains("hidden")) return;
+    const b = box.children[Number(e.key) - 1];
+    if (b) b.click();
   });
 
   // 调试用：无头浏览器里跑一遍全对路径
