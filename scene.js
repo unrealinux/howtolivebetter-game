@@ -267,7 +267,7 @@
     }
   }
 
-  function drawProps(b, cols, rows, fy, props) {
+  function drawProps(b, cols, rows, fy, props, vp) {
     if (!props) return;
     const list = props.map((name, i) => ({
       name,
@@ -277,7 +277,8 @@
     for (const p of list) {
       const spr = SPRITE[p.name];
       if (!spr) continue;
-      const yb = Math.min(rows - 1, Math.round(fy + 1 + (rows - 2 - fy) * p.d));
+      // 地脚收到压暗带之上，别让近景的道具沉在暗里看不见
+      const yb = Math.max(fy, Math.min(rows - 1 - vp, Math.round(fy + 1 + (rows - 2 - fy) * p.d)));
       drawSprite(b, spr, p.cx, yb, 0.5 + p.d * 0.5);
     }
   }
@@ -289,13 +290,12 @@
     return h;
   }
 
-  function person(b, cx, rows, tm, name, talking) {
+  function person(b, cx, rows, tm, name, talking, feet) {
     const hue = hueOf(name);
     const top = "hsl(" + hue + ",16%,28%)";
     const bottom = "hsl(" + hue + ",12%,17%)";
     const skin = "hsl(" + hue + ",20%,34%)";
     const hair = "hsl(" + hue + ",14%,11%)";
-    const feet = rows - 2;
     const bob = Math.floor(tm / 1300) % 2;              // 呼吸：隔一会儿整个下移一格
     const blink = Math.floor(tm / 2600) % 8 === 0;      // 眨眼
     const y0 = feet - 13 + bob;
@@ -333,7 +333,7 @@
     b(cx - 2, y0 + 10, 1, 4, bottom);
     b(cx + 1, y0 + 10, 1, 4, bottom);
     // 影子
-    b(cx - 2, feet + 1, 6, 1, "#000000", 0.3);
+    b(cx - 2, Math.min(rows - 1, feet + 1), 6, 1, "#000000", 0.3);
   }
 
   // 尘：几粒缓慢下沉的小方点，还是整格
@@ -345,17 +345,22 @@
     }
   }
 
-  // 上下压暗：一条一条叠下去。像素风不吃渐变，改吃箍
-  function vignette(b, cols, rows) {
-    b(-3, 0, cols + 6, 2, "#12110c", 0.85);
-    b(-3, 2, cols + 6, 2, "#12110c", 0.4);
-    for (let i = 0; i < 4; i++) b(-3, rows - 4 + i, cols + 6, 1, "#14140f", 0.2 + i * 0.26);
+  // 上下压暗：一条一条叠下去。像素风不吃渐变，改吃箍。
+  // 深度跟带子高走（约 12% 行数），人站在箍上面而不是箍里。
+  function vignette(b, cols, rows, vp) {
+    b(-3, 0, cols + 6, 2, "rgba(18,17,12,0.85)");
+    b(-3, 2, cols + 6, 2, "rgba(18,17,12,0.4)");
+    for (let i = 0; i < vp; i++) {
+      b(-3, rows - vp + i, cols + 6, 1, "rgba(20,20,15," + (0.2 + i * (0.65 / Math.max(1, vp - 1))).toFixed(2) + ")");
+    }
   }
 
   function drawScene(c, u, box, tm, stage, lc, tint, npc, talking) {
     const { x, y, w, h } = box;
     const cols = Math.ceil(w / u), rows = Math.ceil(h / u);
     const fy = Math.round(rows * 0.62);
+    // 压暗带吃多深：随带子高缩，人物和道具都站在它上面
+    const vp = Math.max(2, Math.round(rows * 0.12));
     // 横移：背景整格挪，道具和人挪得少些，凑出前后两层
     const pan = Math.round(Math.sin(tm / 7200) * 2.2);
     const bg = painter(c, u, x + pan * u, y);
@@ -364,10 +369,10 @@
 
     bg(-3, 0, cols + 6, rows, "#14140f");               // 打底，横移不露底
     (WHERE[stage.where] || indoor)(bg, cols, rows, tm, stage, lc, tint);
-    drawProps(fg, cols, rows, fy, stage.props);
-    if (npc) person(fg, Math.max(3, Math.min(cols - 4, Math.round(cols * 0.42))), rows, tm, npc, !!talking);
+    drawProps(fg, cols, rows, fy, stage.props, vp);
+    if (npc) person(fg, Math.max(3, Math.min(cols - 4, Math.round(cols * 0.42))), rows, tm, npc, !!talking, rows - 1 - vp);
     drawAmbient(base, cols, rows, fy, tm, tint);
-    vignette(base, cols, rows);
+    vignette(base, cols, rows, vp);
   }
 
   // 画一条分镜。box 是这条带子在画布上的位置；npc 用来决定剪影的色调。
