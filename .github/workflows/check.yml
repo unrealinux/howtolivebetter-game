@@ -1,0 +1,16 @@
+# 推送和 PR 都跑一次自检：关卡数据 + 引擎/分镜测试。
+# 本地忘了跑 check.mjs 也能在这里被拦下。
+name: check
+
+on: [push, pull_request]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node check.mjs
+      - run: node --test
