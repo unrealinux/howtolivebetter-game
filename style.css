@@ -11,6 +11,9 @@
 
 * { box-sizing: border-box; }
 
+/* 键盘走格子时看得见在哪：默认 outline 被圆角按钮吃掉一半，统一补一条 */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
 body {
   margin: 0;
   background: var(--bg);
@@ -51,6 +54,7 @@ button.primary:hover { filter: brightness(1.1); }
 #band {
   display: block; width: 100%; height: clamp(140px, 22vh, 200px);
   border-radius: 12px; margin-bottom: 14px; background: var(--card);
+  image-rendering: pixelated;
 }
 
 #hud {
